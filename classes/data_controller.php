@@ -191,7 +191,22 @@ class data_controller extends \core_customfield\data_controller {
         return $this->get_form_element_name_prepare(). '_filemanager';
     }
 
+    /**
+     * Returns the name of the field to be used on HTML forms without filemanager.
+     *
+     * @return string
+     */
     protected function get_form_element_name_prepare() : string {
         return 'customfield_' . $this->get_field()->get('shortname');
+    }
+
+    /**
+     * Checks if the value is empty
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    protected function is_empty($value) : bool {
+        return empty($value);
     }
 }
