@@ -55,7 +55,7 @@ class data_controller extends \core_customfield\data_controller {
             'maxbytes' => $config['maxbytes'],
             'accepted_types' => $config['allowedtypes'],
             'subdirs' => 0,
-            'maxfiles' => $config['maxfiles']
+            'maxfiles' => $config['maxfiles'] - 1
         ];
     }
 
@@ -135,19 +135,10 @@ class data_controller extends \core_customfield\data_controller {
      */
     public function get_value() {
         if (!$this->get('id')) {
-            return [$this->get_default_value()];
+            return $this->get_default_value();
         }
 
-        $fs = get_file_storage();
-        $files = [];
-
-        $value = unserialize($this->get($this->datafield()));
-
-        foreach ($value as $fileid) {
-            $files[] = $fs->get_file_by_id($fileid);
-        }
-
-        return $files;
+        return $this->get($this->datafield());
     }
 
     /**
@@ -161,12 +152,17 @@ class data_controller extends \core_customfield\data_controller {
         $value = $this->get_value();
 
         if ($this->is_empty($value)) {
-            return null;
+            return '';
         }
+
+        $fs = get_file_storage();
+        $value = unserialize($value);
 
         $output = [];
 
-        foreach ($value as $file) {
+        foreach ($value as $fileid) {
+            $file = $fs->get_file_by_id($fileid);
+
             $link = (\moodle_url::make_pluginfile_url(
                 $file->get_contextid(),
                 $file->get_component(),
@@ -208,5 +204,17 @@ class data_controller extends \core_customfield\data_controller {
      */
     protected function is_empty($value) : bool {
         return empty($value);
+    }
+
+    /**
+     * Prepares the custom field data related to the object to pass to mform->set_data() and adds them to it
+     *
+     * This function must be called before calling $form->set_data($object);
+     *
+     * @param \stdClass $instance the instance that has custom fields, if 'id' attribute is present the custom
+     *    fields for this instance will be added, otherwise the default values will be added.
+     */
+    public function instance_form_before_set_data(\stdClass $instance) {
+        $instance->{$this->get_form_element_name()} = unserialize($this->get_value());
     }
 }
